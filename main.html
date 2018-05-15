@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Jojo</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/redmond/jquery-ui.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/free-jqgrid/4.15.4/css/ui.jqgrid.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/free-jqgrid/4.15.4/jquery.jqgrid.min.js"></script>
+
+    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
+    <script src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script>
+
+    var example_datatables = null;
+
+    // jqGrod
+    //<![CDATA[
+    $(function () {
+        "use strict";
+        $("#grid1").jqGrid({
+            colModel: [
+                { name: "name", label: "이름" , editable: true, align: "center"},
+                { name: "cost", label: "코스트", align: "center", template: "currency", decimalPlaces: 0, editable: true},
+                // { name: "include", label: "필수포함여부", template: "booleanCheckbox", firstsortorder: "desc", editable: true },
+            ],
+            iconSet: "fontAwesome",
+            // idPrefix: "g1_",
+            rownumbers: true,
+            // sortname: "invdate",
+            // sortorder: "desc",
+            caption: "조합 장수 입력",
+            autoWidth: true,
+            shrinkToFit : true,
+            cellEdit : true,
+            datatype : "local",
+            loadComplete: function(data) {
+                $("#grid1").jqGrid('setGridWidth', $(".col-md-3").width());
+            }
+        });
+    });
+    //]]>
+
+    $(window).on('resize.jqGrid', function () {
+        $("#grid1").jqGrid('setGridWidth', $(".col-md-3").width());
+    });
+
+    // 버튼 이벤트
+    $(document).ready(function(){
+        $('#btn_add').unbind('click');
+        $('#btn_add').bind('click', function(){
+           var ids = $('#grid1').jqGrid('getDataIDs');
+           var lastId = 1;
+
+            if(ids != null){
+                for (var i = 0; i < ids.length; i++) {
+                    if (lastId <= ids[i]) {
+                        lastId = Number(ids[i]) + 1;
+                    }
+                }
+            }
+
+            if (lastId != null) {
+                $('#grid1').jqGrid('addRowData', lastId, {});
+            }
+        });
+
+        $('#btn_clear').unbind('click');
+        $('#btn_clear').bind('click', function(){
+            $('#grid1').jqGrid('clearGridData');
+            example_datatables.clear().draw();
+        });
+
+        $('#btn_calc').unbind('click');
+        $('#btn_calc').bind('click', function(){
+            calc();
+        });
+    });
+
+
+    // DataTable
+    $(function(){
+        if(example_datatables) example_datatables.destroy();
+
+        example_datatables = $('#example').DataTable({
+        });
+
+    });
+
+    function calc(){        
+        var data = $('#grid1').getRowData();
+        var arr = [];
+        combination(arr, 0, data.length, 5, 0);
+    }
+
+    function combination(arr, idx, n, r, target){
+        if(r==0){
+            var data = $('#grid1').getRowData();
+            var totalCost = Number(data[arr[0]].cost) + 
+                            Number(data[arr[1]].cost) + 
+                            Number(data[arr[2]].cost) + 
+                            Number(data[arr[3]].cost) + 
+                            Number(data[arr[4]].cost);
+            if(totalCost < 100){
+                var rowData = [data[arr[0]].name + '(' + data[arr[0]].cost + ')',
+                               data[arr[1]].name + '(' + data[arr[1]].cost + ')', 
+                               data[arr[2]].name + '(' + data[arr[2]].cost + ')',
+                               data[arr[3]].name + '(' + data[arr[3]].cost + ')',
+                               data[arr[4]].name + '(' + data[arr[4]].cost + ')',
+                               totalCost
+                            ];
+                example_datatables.row.add(rowData).draw();
+            }
+        }
+        else if(target == n){
+            return;
+        }
+        else{
+            arr[idx] = target;
+            combination(arr, idx+1, n, r-1, target+1);
+            combination(arr, idx, n, r, target+1);
+        }
+    }
+    </script>
+</head>
+<body>
+  
+<div class="container">
+	<header>
+		<h1> 조조전 온라인 섬멸전 덱 구성 도우미 </h1>
+	</header>
+
+	<section>
+		<!-- <div class="ui two columns divided grid"> -->
+			<div class="row">
+				<div class="col-md-3" id="grid_container">
+					<button type="button" class="btn btn-info btn-xs" id="btn_add">+ 장수 추가</button>
+                    <button type="button" class="btn btn-xs" id="btn_clear">장수 초기화</button>
+                    <button type="button" class="btn btn-default btn-xs" id="btn_calc">덱 계산</button>
+					<table id="grid1"></table>
+				</div>
+				<div class="col-md-9">
+					<table id="example" class="display" cellspacing="0" width="100%">
+                        <thead>
+                            <tr>
+                                <th>장수1</th>
+                                <th>장수2</th>
+                                <th>장수3</th>
+                                <th>장수4</th>
+                                <th>장수5</th>
+                                <th>총 코스트</th>
+                            </tr>
+                        </thead>
+                    </table>
+				</div>
+			</div>
+		<!-- </div> -->
+	</section>
+</div>
+
+</body>
+</html>
